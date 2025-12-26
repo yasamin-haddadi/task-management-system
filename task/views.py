@@ -1,3 +1,40 @@
-from django.shortcuts import render
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from .models import Task
+from .serializers import TaskSerializer
+# CRUD Operation 
+# TaskCRUD
+class TaskListCreateRetrieveUpdateDestroyView(generics.ListCreateAPIView,generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = TaskSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-# Create your views here.
+    def get_queryset(self):
+        # فقط تسک‌های کاربر لاگین شده را نشان بده
+        return Task.objects.all()
+
+    def perform_create(self, serializer):
+        # هنگام ساخت تسک، کاربر لاگین شده را اضافه می‌کنیم
+        serializer.save()
+        
+
+    def perform_update(self, serializer):
+        """
+        شخصی‌سازی عملیات ویرایش
+        """
+        print("🔧 در حال ویرایش تسک توسط:", self.request.user)
+        serializer.save()
+    
+    def delete(self, request, *args, **kwargs):
+        """
+        حذف تسک با پیام ساده برای Postman
+        """
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({"message": "تسک با موفقیت حذف شد ✅"}, status=status.HTTP_204_NO_CONTENT)
+    
+    def perform_destroy(self, instance):
+        """
+        شخصی‌سازی عملیات حذف
+        """
+        print(f"🗑 تسک {instance.name} توسط {self.request.user} حذف شد")
+        instance.delete()
